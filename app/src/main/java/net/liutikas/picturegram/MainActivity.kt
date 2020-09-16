@@ -1,26 +1,20 @@
 package net.liutikas.picturegram
 
-import android.content.Context
-import android.graphics.Bitmap
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.webkit.JavascriptInterface
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.Text
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Button
-import androidx.compose.material.Divider
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.runtime.*
-import androidx.compose.runtime.onDispose
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ContextAmbient
 import androidx.compose.ui.platform.LifecycleOwnerAmbient
 import androidx.compose.ui.platform.setContent
@@ -28,32 +22,33 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import androidx.ui.tooling.preview.Preview
 import net.liutikas.picturegram.ui.PicturegramTheme
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        var startLoading: Boolean by mutableStateOf(false)
+        var showConfigurationWebView: Boolean by mutableStateOf(true)
+        val disconnect = handleWifi(this) { startLoading = true }
         setContent {
             MyApp {
-                MyScreenContent()
+                Column(modifier = Modifier.fillMaxHeight()) {
+                    if (showConfigurationWebView) {
+                        val webview = rememberWebViewWithLifecycle {
+                            disconnect();
+                            showConfigurationWebView = false
+                        }
+                        if (startLoading) {
+                            webview.loadUrl("http://192.168.4.1/config")
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            WebViewContainer(webview)
+                        }
+                    } else {
+                        Text(modifier = Modifier.padding(16.dp), text = "Setup successful. Device should be ready in a few minutes")
+                    }
+                }
             }
-            handleWifi(this)
-        }
-
-    }
-}
-
-@Composable
-private fun MyScreenContent() {
-    Column(modifier = Modifier.fillMaxHeight()) {
-        val webview = rememberWebViewWithLifecycle()
-        Column(modifier = Modifier.weight(1f)) {
-            WebViewContainer(webview)
-        }
-        Divider(color = Color.Transparent, thickness = 32.dp)
-        Button(onClick = { webview.loadUrl("http://192.168.4.1/config") }) {
-            Text("Load the URL")
         }
     }
 }
@@ -69,7 +64,7 @@ fun MyApp(content: @Composable () -> Unit) {
 }
 
 @Composable
-fun rememberWebViewWithLifecycle(): WebView {
+fun rememberWebViewWithLifecycle(submittedFormListener: () -> Unit): WebView {
     val context = ContextAmbient.current
     val webview = remember {
         object: WebView(context) {
@@ -80,24 +75,19 @@ fun rememberWebViewWithLifecycle(): WebView {
         }.apply {
             webViewClient = object : WebViewClient() {
                 override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
-                    println("Override URL loading ${request?.url}")
+                    // Needed so we do not leave WebView with a browser intent
                     return super.shouldOverrideUrlLoading(view, request)
-                }
-
-                override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-                    println("Page started $url")
-                    super.onPageStarted(view, url, favicon)
                 }
 
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
-                    // document.getElementsByName("submit")[0].onclick = function() { alert("testing");}
-                    view?.loadUrl("javascript:document.getElementsByName(\"submit\")[0].onclick = function() { Android.showToast(\"foo\"); }");
+                    view?.loadUrl("javascript:document.getElementsByName(\"submit\")[0].onclick = function() { Android.showToast(); }");
                 }
             }
             settings.apply {
+                @SuppressLint("SetJavaScriptEnabled") // Need JavaScript support
                 javaScriptEnabled = true
-                addJavascriptInterface(WebAppInterface(context), "Android")
+                addJavascriptInterface(WebAppInterface(submittedFormListener), "Android")
             }
         }
     }
@@ -112,11 +102,10 @@ fun rememberWebViewWithLifecycle(): WebView {
     return webview
 }
 
-class WebAppInterface(private val mContext: Context) {
-    /** Show a toast from the web page  */
+class WebAppInterface(val submittedFormListener: () -> Unit) {
     @JavascriptInterface
-    fun showToast(toast: String) {
-        Toast.makeText(mContext, toast, Toast.LENGTH_SHORT).show()
+    fun showToast() {
+        submittedFormListener()
     }
 }
 
@@ -134,15 +123,7 @@ private fun rememberWebViewLifecycleObserver(webView: WebView): LifecycleEventOb
                     Lifecycle.Event.ON_PAUSE -> webView.onPause()
                     else -> {
                         // do nothing
-                    } //throw IllegalStateException()
+                    }
                 }
             }
         }
-
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview() {
-    MyApp {
-        MyScreenContent()
-    }
-}

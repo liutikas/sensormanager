@@ -10,39 +10,27 @@ import android.os.PatternMatcher
 import androidx.core.content.ContextCompat.startActivity
 
 
-fun handleWifi(context: Context) {
-    if (SDK_INT >= 29) {
-        val wifiNetworkSpecifier = WifiNetworkSpecifier.Builder()
-                .setSsidPattern(PatternMatcher("airRohr-", PatternMatcher.PATTERN_PREFIX))
-                .build()
+fun handleWifi(context: Context, networkReadyListener: () -> Unit): () -> Unit {
+    val wifiNetworkSpecifier = WifiNetworkSpecifier.Builder()
+            .setSsidPattern(PatternMatcher("airRohr-", PatternMatcher.PATTERN_PREFIX))
+            .build()
 
-        val networkRequest = NetworkRequest.Builder()
-                .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
-                .removeCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-                .setNetworkSpecifier(wifiNetworkSpecifier)
-                .build()
+    val networkRequest = NetworkRequest.Builder()
+            .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+            .removeCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            .setNetworkSpecifier(wifiNetworkSpecifier)
+            .build()
 
-        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager?
+    val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager?
 
-        val networkCallback = object : ConnectivityManager.NetworkCallback() {
-            override fun onUnavailable() {
-                super.onUnavailable()
-            }
-
-            override fun onLosing(network: Network, maxMsToLive: Int) {
-                super.onLosing(network, maxMsToLive)
-
-            }
-
-            override fun onAvailable(network: Network) {
-                super.onAvailable(network)
-                connectivityManager?.bindProcessToNetwork(network)
-            }
-
-            override fun onLost(network: Network) {
-                super.onLost(network)
-            }
+    val networkCallback = object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: Network) {
+            super.onAvailable(network)
+            connectivityManager?.bindProcessToNetwork(network)
+            networkReadyListener()
         }
-        connectivityManager?.requestNetwork(networkRequest, networkCallback)
     }
+    connectivityManager?.requestNetwork(networkRequest, networkCallback)
+
+    return { connectivityManager?.unregisterNetworkCallback(networkCallback) }
 }
