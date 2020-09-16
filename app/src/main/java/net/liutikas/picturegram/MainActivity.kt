@@ -2,6 +2,7 @@ package net.liutikas.picturegram
 
 import android.annotation.SuppressLint
 import android.os.Bundle
+import android.view.View
 import android.webkit.JavascriptInterface
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
@@ -11,6 +12,7 @@ import androidx.compose.foundation.Text
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.runtime.*
@@ -25,31 +27,70 @@ import androidx.lifecycle.LifecycleEventObserver
 import net.liutikas.picturegram.ui.PicturegramTheme
 
 class MainActivity : AppCompatActivity() {
+    enum class AppState {
+        MAIN,
+        CONFIGURE_DEVICE,
+        LIST_DEVICES
+    }
+
+    private var appState: AppState by mutableStateOf(AppState.MAIN)
+    var startLoading: Boolean by mutableStateOf(false)
+    var showConfigurationWebView: Boolean by mutableStateOf(true)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        var startLoading: Boolean by mutableStateOf(false)
-        var showConfigurationWebView: Boolean by mutableStateOf(true)
-        val disconnect = handleWifi(this) { startLoading = true }
         setContent {
             MyApp {
-                Column(modifier = Modifier.fillMaxHeight()) {
-                    if (showConfigurationWebView) {
-                        val webview = rememberWebViewWithLifecycle {
-                            disconnect();
-                            showConfigurationWebView = false
+                when(appState) {
+                    AppState.MAIN -> {
+                        Column {
+                            Button(onClick = { appState = AppState.CONFIGURE_DEVICE }) {
+                                Text(text = "Configure new device")
+                            }
+                            Button(onClick = { appState = AppState.LIST_DEVICES }) {
+                                Text(text = "List existing devices")
+                            }
                         }
-                        if (startLoading) {
-                            webview.loadUrl("http://192.168.4.1/config")
+                    }
+                    AppState.CONFIGURE_DEVICE -> {
+                        val disconnect = remember { handleWifi(this) { startLoading = true } }
+                        Column(modifier = Modifier.fillMaxHeight()) {
+
+                            val webview = rememberWebViewWithLifecycle {
+                                showConfigurationWebView = false
+                            }
+                            if (startLoading) {
+                                webview.loadUrl("http://192.168.4.1/config")
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
+                                WebViewContainer(webview)
+                            }
+                            if (showConfigurationWebView) {
+                                webview.visibility = View.VISIBLE
+                            } else {
+                                webview.visibility = View.GONE
+                                Text(modifier = Modifier.padding(16.dp), text = "Setup successful. Device should be ready in a few minutes")
+                            }
+                            Button(onClick = { backToMainScreen(); disconnect(); }) {
+                                Text(text = "Back to main menu")
+                            }
                         }
-                        Column(modifier = Modifier.weight(1f)) {
-                            WebViewContainer(webview)
+                    }
+                    AppState.LIST_DEVICES -> {
+                        Button(onClick = { backToMainScreen() }) {
+                            Text(text = "Back to main menu")
                         }
-                    } else {
-                        Text(modifier = Modifier.padding(16.dp), text = "Setup successful. Device should be ready in a few minutes")
                     }
                 }
+
             }
         }
+    }
+
+    private fun backToMainScreen() {
+        appState = AppState.MAIN
+        startLoading = false
+        showConfigurationWebView = true
     }
 }
 
