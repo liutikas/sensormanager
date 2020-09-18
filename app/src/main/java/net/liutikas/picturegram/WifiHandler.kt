@@ -1,14 +1,12 @@
 package net.liutikas.picturegram
 
 import android.content.Context
-import android.content.Intent
-import android.net.*
-import android.net.wifi.WifiManager
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import android.net.wifi.WifiNetworkSpecifier
-import android.os.Build.VERSION.SDK_INT
 import android.os.PatternMatcher
-import androidx.core.content.ContextCompat.startActivity
-
 
 fun handleWifi(context: Context, networkReadyListener: () -> Unit): () -> Unit {
     val wifiNetworkSpecifier = WifiNetworkSpecifier.Builder()

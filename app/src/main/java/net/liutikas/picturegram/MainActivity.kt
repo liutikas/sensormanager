@@ -12,11 +12,10 @@ import androidx.compose.foundation.Text
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Button
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
+import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ContextAmbient
 import androidx.compose.ui.platform.LifecycleOwnerAmbient
 import androidx.compose.ui.platform.setContent
@@ -24,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.ui.tooling.preview.Preview
 import net.liutikas.picturegram.ui.PicturegramTheme
 
 class MainActivity : AppCompatActivity() {
@@ -43,14 +43,7 @@ class MainActivity : AppCompatActivity() {
             MyApp {
                 when(appState) {
                     AppState.MAIN -> {
-                        Column {
-                            Button(onClick = { appState = AppState.CONFIGURE_DEVICE }) {
-                                Text(text = "Configure new device")
-                            }
-                            Button(onClick = { appState = AppState.LIST_DEVICES }) {
-                                Text(text = "List existing devices")
-                            }
-                        }
+                        mainScreen { newState ->  appState = newState }
                     }
                     AppState.CONFIGURE_DEVICE -> {
                         val disconnect = remember { handleWifi(this) { startLoading = true } }
@@ -92,6 +85,29 @@ class MainActivity : AppCompatActivity() {
         startLoading = false
         showConfigurationWebView = true
     }
+}
+
+@Composable
+fun mainScreen(navigation: (MainActivity.AppState) -> Unit = {}) {
+    Scaffold(topBar = {
+        TopAppBar(title = { Text("sensor.community") })
+    }) {
+        Column(Modifier.padding(32.dp)) {
+            Button(onClick = { navigation(MainActivity.AppState.CONFIGURE_DEVICE) }) {
+                Text(text = "Configure new device")
+            }
+            Divider(color = Color.Transparent, thickness = 16.dp)
+            Button(onClick = { navigation(MainActivity.AppState.LIST_DEVICES) }) {
+                Text(text = "List existing devices")
+            }
+        }
+    }
+}
+
+@Preview
+@Composable
+fun previewMainScreen() {
+    mainScreen()
 }
 
 @Composable
