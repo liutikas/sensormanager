@@ -9,6 +9,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.Text
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -20,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ContextAmbient
 import androidx.compose.ui.platform.LifecycleOwnerAmbient
 import androidx.compose.ui.platform.setContent
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
@@ -49,40 +51,59 @@ class MainActivity : AppCompatActivity() {
                         mainScreen { newState ->  appState = newState }
                     }
                     AppState.CONFIGURE_DEVICE -> {
-                        val disconnect = remember { handleWifi(this) { startLoading = true } }
-                        Column(modifier = Modifier.fillMaxHeight()) {
-
-                            val webview = rememberWebViewWithLifecycle {
-                                showConfigurationWebView = false
-                            }
-                            if (startLoading) {
-                                webview.loadUrl("http://192.168.4.1/config")
-                            }
-                            Column(modifier = Modifier.weight(1f)) {
-                                WebViewContainer(webview)
-                            }
-                            if (showConfigurationWebView) {
-                                webview.visibility = View.VISIBLE
-                            } else {
-                                webview.visibility = View.GONE
-                                Text(modifier = Modifier.padding(16.dp), text = "Setup successful. Device should be ready in a few minutes")
-                            }
-                            Button(onClick = { backToMainScreen(); disconnect(); }) {
-                                Text(text = "Back to main menu")
+                        Scaffold(topBar = {
+                            TopAppBar(
+                                    title = { Text("sensor.community")},
+                                    navigationIcon = {
+                                        IconButton(onClick = { backToMainScreen() }) {
+                                            Image(asset = vectorResource(id = R.drawable.ic_back))
+                                        }
+                                    },
+                            )
+                        }) {
+                            val disconnect = remember { handleWifi(this) { startLoading = true } }
+                            Column(modifier = Modifier.fillMaxHeight()) {
+                                val webview = rememberWebViewWithLifecycle {
+                                    showConfigurationWebView = false
+                                }
+                                if (startLoading) {
+                                    webview.loadUrl("http://192.168.4.1/config")
+                                }
+                                Column(modifier = Modifier.weight(1f)) {
+                                    WebViewContainer(webview)
+                                }
+                                if (showConfigurationWebView) {
+                                    webview.visibility = View.VISIBLE
+                                } else {
+                                    webview.visibility = View.GONE
+                                    Text(modifier = Modifier.padding(16.dp), text = "Setup successful. Device should be ready in a few minutes")
+                                }
                             }
                         }
                     }
                     AppState.LIST_DEVICES -> {
-                        Column {
-                            Button(onClick = { backToMainScreen() }) {
-                                Text(text = "Back to main menu")
-                            }
-                            setupLocalDiscovery(this@MainActivity) { service ->
-                                discoveredServices[service.serviceName] = service
-                            }
-                            for (service in discoveredServices.values) {
-                                Button(onClick = { resolveService(this@MainActivity, service) }) {
-                                    Text(service.serviceName)
+                        Scaffold(topBar = {
+                            TopAppBar(
+                                    title = { Text("sensor.community")},
+                                    navigationIcon = {
+                                        IconButton(onClick = { backToMainScreen() }) {
+                                            Image(asset = vectorResource(id = R.drawable.ic_back))
+                                        }
+                                    },
+                            )
+                        }) {
+                            Column {
+                                setupLocalDiscovery(this@MainActivity) { service ->
+                                    discoveredServices[service.serviceName] = service
+                                }
+                                if (discoveredServices.isEmpty()) {
+                                    Text("Searching for sensor.community devices")
+                                } else {
+                                    for (service in discoveredServices.values) {
+                                        Button(onClick = { resolveService(this@MainActivity, service) }) {
+                                            Text(service.serviceName)
+                                        }
+                                    }
                                 }
                             }
                         }

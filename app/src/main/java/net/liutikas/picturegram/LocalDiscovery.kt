@@ -5,8 +5,6 @@ import android.content.Intent
 import android.net.Uri
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
-import androidx.core.content.ContextCompat.startActivity
-
 
 fun setupLocalDiscovery(context: Context, discovered: (NsdServiceInfo) -> Unit) {
     val discoveryListener = object : NsdManager.DiscoveryListener {
