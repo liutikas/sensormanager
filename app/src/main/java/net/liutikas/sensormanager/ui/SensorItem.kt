@@ -1,4 +1,4 @@
-package net.liutikas.picturegram.ui
+package net.liutikas.sensormanager.ui
 
 import androidx.compose.foundation.Text
 import androidx.compose.foundation.layout.Column
@@ -22,7 +22,7 @@ fun SensorItem(
             Text(item.name)
             if (item.ipAddress != null) {
                 Text(
-                        text = item.ipAddress!!,
+                        text = item.ipAddress,
                         style = MaterialTheme.typography.caption
                 )
             } else {

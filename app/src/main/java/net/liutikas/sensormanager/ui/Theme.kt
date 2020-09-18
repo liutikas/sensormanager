@@ -1,4 +1,4 @@
-package net.liutikas.picturegram.ui
+package net.liutikas.sensormanager.ui
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material.MaterialTheme

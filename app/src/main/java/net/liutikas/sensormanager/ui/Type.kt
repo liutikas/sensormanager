@@ -1,4 +1,4 @@
-package net.liutikas.picturegram.ui
+package net.liutikas.sensormanager.ui
 
 import androidx.compose.material.Typography
 import androidx.compose.ui.text.TextStyle

@@ -1,4 +1,4 @@
-package net.liutikas.picturegram
+package net.liutikas.sensormanager
 
 import android.annotation.SuppressLint
 import android.net.nsd.NsdServiceInfo
@@ -27,9 +27,9 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.ui.tooling.preview.Preview
-import net.liutikas.picturegram.ui.PicturegramTheme
-import net.liutikas.picturegram.ui.SensorItem
-import net.liutikas.picturegram.ui.SensorItemEntry
+import net.liutikas.sensormanager.ui.PicturegramTheme
+import net.liutikas.sensormanager.ui.SensorItem
+import net.liutikas.sensormanager.ui.SensorItemEntry
 
 class MainActivity : AppCompatActivity() {
     enum class AppState {
@@ -44,6 +44,7 @@ class MainActivity : AppCompatActivity() {
 
     val discoveredServices = mutableMapOf<String, NsdServiceInfo>()
     var sensorItems: List<SensorItemEntry> by mutableStateOf(emptyList())
+    var disconnect: () -> Unit = {}
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,7 +65,7 @@ class MainActivity : AppCompatActivity() {
                                     },
                             )
                         }) {
-                            val disconnect = remember { handleWifi(this) { startLoading = true } }
+                            disconnect = remember { handleWifi(this) { startLoading = true } }
                             Column(modifier = Modifier.fillMaxHeight()) {
                                 val webview = rememberWebViewWithLifecycle {
                                     showConfigurationWebView = false
@@ -97,11 +98,9 @@ class MainActivity : AppCompatActivity() {
                         }) {
                             Column(Modifier.padding(32.dp)) {
                                 remember { setupLocalDiscovery(this@MainActivity) { service ->
-                                    discoveredServices[service.serviceName] = service
-                                    sensorItems = discoveredServices.map {
-                                        SensorItemEntry(it.value.serviceName, null, false)
+                                        discoveredServices[service.serviceName] = service
+                                        updateSensorItems()
                                     }
-                                }
                                 }
                                 if (sensorItems.isEmpty()) {
                                     Text("Searching for sensor.community devices on the local network")
@@ -115,9 +114,7 @@ class MainActivity : AppCompatActivity() {
                                                     }
                                                     resolveService(this@MainActivity, discoveredServices[item.name]) { service ->
                                                         discoveredServices[service.serviceName] = service
-                                                        sensorItems = discoveredServices.map {
-                                                            SensorItemEntry(it.value.serviceName, if(it.value.host != null) it.value.host.hostAddress else null, false)
-                                                        }
+                                                        updateSensorItems()
                                                     }
                                                 },
                                                 open = {
@@ -144,12 +141,19 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun updateSensorItems() {
+        sensorItems = discoveredServices.map {
+            SensorItemEntry(it.value.serviceName, if(it.value.host != null) it.value.host.hostAddress else null, false)
+        }
+    }
+
     private fun backToMainScreen() {
         appState = AppState.MAIN
         startLoading = false
         showConfigurationWebView = true
         discoveredServices.clear()
         sensorItems = emptyList()
+        disconnect()
     }
 }
 

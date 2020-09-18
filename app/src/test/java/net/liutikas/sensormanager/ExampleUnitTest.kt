@@ -1,4 +1,4 @@
-package net.liutikas.picturegram
+package net.liutikas.sensormanager
 
 import org.junit.Test
 

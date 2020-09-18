@@ -1,4 +1,4 @@
-package net.liutikas.picturegram
+package net.liutikas.sensormanager
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
