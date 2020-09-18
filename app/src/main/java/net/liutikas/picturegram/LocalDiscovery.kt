@@ -23,7 +23,9 @@ fun setupLocalDiscovery(context: Context, discovered: (NsdServiceInfo) -> Unit) 
 
         override fun onServiceFound(serviceInfo: NsdServiceInfo?) {
             if (serviceInfo == null) return
-            discovered(serviceInfo)
+            if (serviceInfo.serviceName.startsWith("airRohr-")) {
+                discovered(serviceInfo)
+            }
             println("Service discovered: " + serviceInfo.getServiceName() + " host:" + serviceInfo.getHost() + " port:"
                     + serviceInfo.getPort() + " type:" + serviceInfo.getServiceType());
         }
