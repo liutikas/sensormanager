@@ -42,7 +42,7 @@ class MainActivity : AppCompatActivity() {
     var startLoading: Boolean by mutableStateOf(false)
     var showConfigurationWebView: Boolean by mutableStateOf(true)
 
-    val discoveredServices: MutableMap<String, NsdServiceInfo> by mutableStateOf(mutableMapOf<String, NsdServiceInfo>())
+    val discoveredServices = mutableMapOf<String, NsdServiceInfo>()
     var sensorItems: List<SensorItemEntry> by mutableStateOf(emptyList())
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -95,7 +95,7 @@ class MainActivity : AppCompatActivity() {
                                     },
                             )
                         }) {
-                            Column {
+                            Column(Modifier.padding(32.dp)) {
                                 remember { setupLocalDiscovery(this@MainActivity) { service ->
                                     discoveredServices[service.serviceName] = service
                                     sensorItems = discoveredServices.map {
@@ -124,6 +124,7 @@ class MainActivity : AppCompatActivity() {
                                                     openService(this@MainActivity, discoveredServices[item.name]!!)
                                                 }
                                         )
+                                        Divider(color = Color.Transparent, thickness = 16.dp)
                                     }
                                 }
                             }
@@ -135,10 +136,20 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onBackPressed() {
+        if (appState == AppState.MAIN) {
+            super.onBackPressed()
+        } else {
+            backToMainScreen()
+        }
+    }
+
     private fun backToMainScreen() {
         appState = AppState.MAIN
         startLoading = false
         showConfigurationWebView = true
+        discoveredServices.clear()
+        sensorItems = emptyList()
     }
 }
 
