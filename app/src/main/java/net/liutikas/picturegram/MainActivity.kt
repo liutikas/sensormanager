@@ -1,6 +1,7 @@
 package net.liutikas.picturegram
 
 import android.annotation.SuppressLint
+import android.net.nsd.NsdServiceInfo
 import android.os.Bundle
 import android.view.View
 import android.webkit.JavascriptInterface
@@ -37,6 +38,8 @@ class MainActivity : AppCompatActivity() {
     var startLoading: Boolean by mutableStateOf(false)
     var showConfigurationWebView: Boolean by mutableStateOf(true)
 
+    val discoveredServices: MutableMap<String, NsdServiceInfo> by mutableStateOf(mutableMapOf<String, NsdServiceInfo>())
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -70,8 +73,18 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     AppState.LIST_DEVICES -> {
-                        Button(onClick = { backToMainScreen() }) {
-                            Text(text = "Back to main menu")
+                        Column {
+                            Button(onClick = { backToMainScreen() }) {
+                                Text(text = "Back to main menu")
+                            }
+                            setupLocalDiscovery(this@MainActivity) { service ->
+                                discoveredServices[service.serviceName] = service
+                            }
+                            for (service in discoveredServices.values) {
+                                Button(onClick = { resolveService(this@MainActivity, service) }) {
+                                    Text(service.serviceName)
+                                }
+                            }
                         }
                     }
                 }
