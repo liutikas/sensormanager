@@ -40,7 +40,7 @@ fun setupLocalDiscovery(context: Context, discovered: (NsdServiceInfo) -> Unit) 
             discoveryListener)
 }
 
-fun resolveService(context: Context, serviceInfo: NsdServiceInfo?) {
+fun resolveService(context: Context, serviceInfo: NsdServiceInfo?, resolved: (NsdServiceInfo) -> Unit) {
     val discoveryListener = object: NsdManager.ResolveListener {
         override fun onResolveFailed(serviceInfo: NsdServiceInfo?, errorCode: Int) {
             println("Service resolve FAILED $errorCode")
@@ -48,15 +48,19 @@ fun resolveService(context: Context, serviceInfo: NsdServiceInfo?) {
 
         override fun onServiceResolved(serviceInfo: NsdServiceInfo?) {
             if (serviceInfo == null) return
+            resolved(serviceInfo)
             println("Service resolved: " + serviceInfo.getServiceName() + " host:" + serviceInfo.getHost() + " port:"
                     + serviceInfo.getPort() + " type:" + serviceInfo.getServiceType());
-            val url = "http://${serviceInfo.host.hostAddress}"
-            val i = Intent(Intent.ACTION_VIEW)
-            i.data = Uri.parse(url)
-            context.startActivity(i)
         }
 
     }
     val nsdManager = context.getSystemService(Context.NSD_SERVICE) as NsdManager
     nsdManager.resolveService(serviceInfo, discoveryListener)
+}
+
+fun openService(context: Context, serviceInfo: NsdServiceInfo) {
+    val url = "http://${serviceInfo.host.hostAddress}"
+    val i = Intent(Intent.ACTION_VIEW)
+    i.data = Uri.parse(url)
+    context.startActivity(i)
 }

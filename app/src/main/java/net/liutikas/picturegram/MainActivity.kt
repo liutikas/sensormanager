@@ -28,6 +28,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.ui.tooling.preview.Preview
 import net.liutikas.picturegram.ui.PicturegramTheme
+import net.liutikas.picturegram.ui.SensorItem
+import net.liutikas.picturegram.ui.SensorItemEntry
 
 class MainActivity : AppCompatActivity() {
     enum class AppState {
@@ -41,6 +43,7 @@ class MainActivity : AppCompatActivity() {
     var showConfigurationWebView: Boolean by mutableStateOf(true)
 
     val discoveredServices: MutableMap<String, NsdServiceInfo> by mutableStateOf(mutableMapOf<String, NsdServiceInfo>())
+    var sensorItems: List<SensorItemEntry> by mutableStateOf(emptyList())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -93,16 +96,34 @@ class MainActivity : AppCompatActivity() {
                             )
                         }) {
                             Column {
-                                setupLocalDiscovery(this@MainActivity) { service ->
+                                remember { setupLocalDiscovery(this@MainActivity) { service ->
                                     discoveredServices[service.serviceName] = service
+                                    sensorItems = discoveredServices.map {
+                                        SensorItemEntry(it.value.serviceName, null, false)
+                                    }
                                 }
-                                if (discoveredServices.isEmpty()) {
-                                    Text("Searching for sensor.community devices")
+                                }
+                                if (sensorItems.isEmpty()) {
+                                    Text("Searching for sensor.community devices on the local network")
                                 } else {
-                                    for (service in discoveredServices.values) {
-                                        Button(onClick = { resolveService(this@MainActivity, service) }) {
-                                            Text(service.serviceName)
-                                        }
+                                    for (item in sensorItems) {
+                                        SensorItem(
+                                                item,
+                                                resolve = {
+                                                    sensorItems = discoveredServices.map {
+                                                        SensorItemEntry(it.value.serviceName, if(it.value.host != null) it.value.host.hostAddress else null, it.value.serviceName == item.name)
+                                                    }
+                                                    resolveService(this@MainActivity, discoveredServices[item.name]) { service ->
+                                                        discoveredServices[service.serviceName] = service
+                                                        sensorItems = discoveredServices.map {
+                                                            SensorItemEntry(it.value.serviceName, if(it.value.host != null) it.value.host.hostAddress else null, false)
+                                                        }
+                                                    }
+                                                },
+                                                open = {
+                                                    openService(this@MainActivity, discoveredServices[item.name]!!)
+                                                }
+                                        )
                                     }
                                 }
                             }
