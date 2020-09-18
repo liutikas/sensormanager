@@ -27,6 +27,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.ui.tooling.preview.Preview
+import net.liutikas.sensormanager.ui.ConnectPower
 import net.liutikas.sensormanager.ui.PicturegramTheme
 import net.liutikas.sensormanager.ui.SensorItem
 import net.liutikas.sensormanager.ui.SensorItemEntry
@@ -34,6 +35,7 @@ import net.liutikas.sensormanager.ui.SensorItemEntry
 class MainActivity : AppCompatActivity() {
     enum class AppState {
         MAIN,
+        CONNECT_POWER,
         CONFIGURE_DEVICE,
         LIST_DEVICES
     }
@@ -60,8 +62,12 @@ class MainActivity : AppCompatActivity() {
                     AppState.LIST_DEVICES -> {
                         listDevicesScreen()
                     }
+                    AppState.CONNECT_POWER -> {
+                        ConnectPower { newState ->
+                            appState = newState
+                        }
+                    }
                 }
-
             }
         }
     }
@@ -99,18 +105,15 @@ class MainActivity : AppCompatActivity() {
 
     @Composable
     fun configureDeviceScreen() {
-        Scaffold(topBar = {
-            TopAppBar(
-                    title = { Text("sensor.community")},
-                    navigationIcon = {
-                        IconButton(onClick = { backToMainScreen() }) {
-                            Image(asset = vectorResource(id = R.drawable.ic_back))
-                        }
-                    },
-            )
-        }) {
+        SubScreen(mainScreen = { backToMainScreen() }) {
             disconnect = remember { handleWifi(this) { startLoading = true } }
             Column(modifier = Modifier.fillMaxHeight()) {
+                if (showConfigurationWebView) {
+                    Text(modifier = Modifier.padding(16.dp), text = "Enter network name and password. Click save and restart")
+                } else {
+                    Text(modifier = Modifier.padding(16.dp), text = "Setup successful. Device should be ready in a few minutes")
+                    Image(asset = vectorResource(id = R.drawable.ic_check))
+                }
                 val webview = rememberWebViewWithLifecycle {
                     showConfigurationWebView = false
                 }
@@ -120,28 +123,14 @@ class MainActivity : AppCompatActivity() {
                 Column(modifier = Modifier.weight(1f)) {
                     WebViewContainer(webview)
                 }
-                if (showConfigurationWebView) {
-                    webview.visibility = View.VISIBLE
-                } else {
-                    webview.visibility = View.GONE
-                    Text(modifier = Modifier.padding(16.dp), text = "Setup successful. Device should be ready in a few minutes")
-                }
+                webview.visibility = if(showConfigurationWebView) View.VISIBLE else View.GONE
             }
         }
     }
 
     @Composable
     fun listDevicesScreen() {
-        Scaffold(topBar = {
-            TopAppBar(
-                    title = { Text("sensor.community")},
-                    navigationIcon = {
-                        IconButton(onClick = { backToMainScreen() }) {
-                            Image(asset = vectorResource(id = R.drawable.ic_back))
-                        }
-                    },
-            )
-        }) {
+        SubScreen({ backToMainScreen() }) {
             Column(Modifier.padding(32.dp)) {
                 remember { setupLocalDiscovery(this@MainActivity) { service ->
                     discoveredServices[service.serviceName] = service
@@ -176,12 +165,31 @@ class MainActivity : AppCompatActivity() {
 }
 
 @Composable
+fun SubScreen(mainScreen: () -> Unit, content: @Composable () -> Unit) {
+    Scaffold(topBar = {
+        TopAppBar(
+                title = { Text("sensor.community")},
+                navigationIcon = {
+                    IconButton(onClick = { mainScreen()  }) {
+                        Image(asset = vectorResource(id = R.drawable.ic_back))
+                    }
+                },
+        )
+    }) {
+        content()
+    }
+}
+
+@Composable
 fun mainScreen(navigation: (MainActivity.AppState) -> Unit = {}) {
     Scaffold(topBar = {
-        TopAppBar(title = { Text("sensor.community") })
+        TopAppBar(title = { Text("sensor.community") },
+        navigationIcon = {
+            Image(asset = vectorResource(id = R.drawable.ic_sensors), modifier = Modifier.padding(16.dp))
+        })
     }) {
         Column(Modifier.padding(32.dp)) {
-            Button(onClick = { navigation(MainActivity.AppState.CONFIGURE_DEVICE) }) {
+            Button(onClick = { navigation(MainActivity.AppState.CONNECT_POWER) }) {
                 Text(text = "Configure new device")
             }
             Divider(color = Color.Transparent, thickness = 16.dp)
