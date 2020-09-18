@@ -54,7 +54,7 @@ class MainActivity : AppCompatActivity() {
             MyApp {
                 when(appState) {
                     AppState.MAIN -> {
-                        mainScreen { newState ->  appState = newState }
+                        mainScreen { goToState(it) }
                     }
                     AppState.CONFIGURE_DEVICE -> {
                         configureDeviceScreen()
@@ -63,20 +63,29 @@ class MainActivity : AppCompatActivity() {
                         listDevicesScreen()
                     }
                     AppState.CONNECT_POWER -> {
-                        ConnectPower { newState ->
-                            appState = newState
-                        }
+                        ConnectPower { goToState(it) }
                     }
                 }
             }
         }
     }
 
+    private fun goToState(newState: AppState) {
+        if (newState == AppState.MAIN) {
+            startLoading = false
+            showConfigurationWebView = true
+            discoveredServices.clear()
+            sensorItems = emptyList()
+            disconnect()
+        }
+        appState = newState
+    }
+
     override fun onBackPressed() {
         if (appState == AppState.MAIN) {
             super.onBackPressed()
         } else {
-            backToMainScreen()
+            goToState(AppState.MAIN)
         }
     }
 
@@ -94,18 +103,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun backToMainScreen() {
-        appState = AppState.MAIN
-        startLoading = false
-        showConfigurationWebView = true
-        discoveredServices.clear()
-        sensorItems = emptyList()
-        disconnect()
-    }
-
     @Composable
     fun configureDeviceScreen() {
-        SubScreen(mainScreen = { backToMainScreen() }) {
+        SubScreen(navigation = { goToState(it) }) {
             disconnect = remember { handleWifi(this) { startLoading = true } }
             Column(modifier = Modifier.fillMaxHeight()) {
                 if (showConfigurationWebView) {
@@ -130,7 +130,7 @@ class MainActivity : AppCompatActivity() {
 
     @Composable
     fun listDevicesScreen() {
-        SubScreen({ backToMainScreen() }) {
+        SubScreen(navigation = { goToState(it) }) {
             Column(Modifier.padding(32.dp)) {
                 remember { setupLocalDiscovery(this@MainActivity) { service ->
                     discoveredServices[service.serviceName] = service
@@ -165,12 +165,12 @@ class MainActivity : AppCompatActivity() {
 }
 
 @Composable
-fun SubScreen(mainScreen: () -> Unit, content: @Composable () -> Unit) {
+fun SubScreen(navigation: (MainActivity.AppState) -> Unit, content: @Composable () -> Unit) {
     Scaffold(topBar = {
         TopAppBar(
                 title = { Text("sensor.community")},
                 navigationIcon = {
-                    IconButton(onClick = { mainScreen()  }) {
+                    IconButton(onClick = { navigation(MainActivity.AppState.MAIN)  }) {
                         Image(asset = vectorResource(id = R.drawable.ic_back))
                     }
                 },
