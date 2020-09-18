@@ -55,77 +55,10 @@ class MainActivity : AppCompatActivity() {
                         mainScreen { newState ->  appState = newState }
                     }
                     AppState.CONFIGURE_DEVICE -> {
-                        Scaffold(topBar = {
-                            TopAppBar(
-                                    title = { Text("sensor.community")},
-                                    navigationIcon = {
-                                        IconButton(onClick = { backToMainScreen() }) {
-                                            Image(asset = vectorResource(id = R.drawable.ic_back))
-                                        }
-                                    },
-                            )
-                        }) {
-                            disconnect = remember { handleWifi(this) { startLoading = true } }
-                            Column(modifier = Modifier.fillMaxHeight()) {
-                                val webview = rememberWebViewWithLifecycle {
-                                    showConfigurationWebView = false
-                                }
-                                if (startLoading) {
-                                    webview.loadUrl("http://192.168.4.1/config")
-                                }
-                                Column(modifier = Modifier.weight(1f)) {
-                                    WebViewContainer(webview)
-                                }
-                                if (showConfigurationWebView) {
-                                    webview.visibility = View.VISIBLE
-                                } else {
-                                    webview.visibility = View.GONE
-                                    Text(modifier = Modifier.padding(16.dp), text = "Setup successful. Device should be ready in a few minutes")
-                                }
-                            }
-                        }
+                        configureDeviceScreen()
                     }
                     AppState.LIST_DEVICES -> {
-                        Scaffold(topBar = {
-                            TopAppBar(
-                                    title = { Text("sensor.community")},
-                                    navigationIcon = {
-                                        IconButton(onClick = { backToMainScreen() }) {
-                                            Image(asset = vectorResource(id = R.drawable.ic_back))
-                                        }
-                                    },
-                            )
-                        }) {
-                            Column(Modifier.padding(32.dp)) {
-                                remember { setupLocalDiscovery(this@MainActivity) { service ->
-                                        discoveredServices[service.serviceName] = service
-                                        updateSensorItems()
-                                    }
-                                }
-                                if (sensorItems.isEmpty()) {
-                                    Text("Searching for sensor.community devices on the local network")
-                                } else {
-                                    for (item in sensorItems) {
-                                        SensorItem(
-                                                item,
-                                                resolve = {
-                                                    sensorItems = discoveredServices.map {
-                                                        SensorItemEntry(it.value.serviceName, if(it.value.host != null) it.value.host.hostAddress else null, it.value.serviceName == item.name)
-                                                    }
-                                                    resolveService(this@MainActivity, discoveredServices[item.name]) { service ->
-                                                        discoveredServices[service.serviceName] = service
-                                                        updateSensorItems()
-                                                    }
-                                                },
-                                                open = {
-                                                    openService(this@MainActivity, discoveredServices[item.name]!!)
-                                                }
-                                        )
-                                        Divider(color = Color.Transparent, thickness = 16.dp)
-                                    }
-                                }
-                            }
-                        }
+                        listDevicesScreen()
                     }
                 }
 
@@ -143,7 +76,15 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateSensorItems() {
         sensorItems = discoveredServices.map {
-            SensorItemEntry(it.value.serviceName, if(it.value.host != null) it.value.host.hostAddress else null, false)
+            SensorItemEntry(
+                    it.value.serviceName,
+                    if (it.value.host != null) {
+                        it.value.host.hostAddress
+                    } else {
+                        null
+                    },
+                    false
+            )
         }
     }
 
@@ -154,6 +95,83 @@ class MainActivity : AppCompatActivity() {
         discoveredServices.clear()
         sensorItems = emptyList()
         disconnect()
+    }
+
+    @Composable
+    fun configureDeviceScreen() {
+        Scaffold(topBar = {
+            TopAppBar(
+                    title = { Text("sensor.community")},
+                    navigationIcon = {
+                        IconButton(onClick = { backToMainScreen() }) {
+                            Image(asset = vectorResource(id = R.drawable.ic_back))
+                        }
+                    },
+            )
+        }) {
+            disconnect = remember { handleWifi(this) { startLoading = true } }
+            Column(modifier = Modifier.fillMaxHeight()) {
+                val webview = rememberWebViewWithLifecycle {
+                    showConfigurationWebView = false
+                }
+                if (startLoading) {
+                    webview.loadUrl("http://192.168.4.1/config")
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    WebViewContainer(webview)
+                }
+                if (showConfigurationWebView) {
+                    webview.visibility = View.VISIBLE
+                } else {
+                    webview.visibility = View.GONE
+                    Text(modifier = Modifier.padding(16.dp), text = "Setup successful. Device should be ready in a few minutes")
+                }
+            }
+        }
+    }
+
+    @Composable
+    fun listDevicesScreen() {
+        Scaffold(topBar = {
+            TopAppBar(
+                    title = { Text("sensor.community")},
+                    navigationIcon = {
+                        IconButton(onClick = { backToMainScreen() }) {
+                            Image(asset = vectorResource(id = R.drawable.ic_back))
+                        }
+                    },
+            )
+        }) {
+            Column(Modifier.padding(32.dp)) {
+                remember { setupLocalDiscovery(this@MainActivity) { service ->
+                    discoveredServices[service.serviceName] = service
+                    updateSensorItems()
+                }
+                }
+                if (sensorItems.isEmpty()) {
+                    Text("Searching for sensor.community devices on the local network")
+                } else {
+                    for (item in sensorItems) {
+                        SensorItem(
+                                item,
+                                resolve = {
+                                    sensorItems = discoveredServices.map {
+                                        SensorItemEntry(it.value.serviceName, if(it.value.host != null) it.value.host.hostAddress else null, it.value.serviceName == item.name)
+                                    }
+                                    resolveService(this@MainActivity, discoveredServices[item.name]) { service ->
+                                        discoveredServices[service.serviceName] = service
+                                        updateSensorItems()
+                                    }
+                                },
+                                open = {
+                                    openService(this@MainActivity, discoveredServices[item.name]!!)
+                                }
+                        )
+                        Divider(color = Color.Transparent, thickness = 16.dp)
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -208,7 +226,7 @@ fun rememberWebViewWithLifecycle(submittedFormListener: () -> Unit): WebView {
 
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
-                    view?.loadUrl("javascript:document.getElementsByName(\"submit\")[0].onclick = function() { Android.showToast(); }");
+                    view?.loadUrl("javascript:document.getElementsByName(\"submit\")[0].onclick = function() { Android.onFormSubmitted(); }");
                 }
             }
             settings.apply {
@@ -231,7 +249,7 @@ fun rememberWebViewWithLifecycle(submittedFormListener: () -> Unit): WebView {
 
 class WebAppInterface(val submittedFormListener: () -> Unit) {
     @JavascriptInterface
-    fun showToast() {
+    fun onFormSubmitted() {
         submittedFormListener()
     }
 }
