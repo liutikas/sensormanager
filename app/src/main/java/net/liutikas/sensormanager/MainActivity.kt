@@ -110,14 +110,22 @@ class MainActivity : AppCompatActivity() {
     fun listDevicesScreen(navigation: (AppState) -> Unit) {
         SubScreen(navigation) {
             Column(Modifier.padding(32.dp)) {
-                remember { setupLocalDiscovery(this@MainActivity) { service ->
-                    discoveredServices[service.serviceName] = service
-                    updateSensorItems()
+                Button(onClick = { navigation(AppState.CONNECT_POWER) }) {
+                    Text(text = "Configure new device")
                 }
+                Divider(color = Color.Transparent, thickness = 16.dp)
+
+                remember {
+                    setupLocalDiscovery(this@MainActivity) { service ->
+                        discoveredServices[service.serviceName] = service
+                        updateSensorItems()
+                    }
                 }
                 if (sensorItems.isEmpty()) {
                     Text("Searching for sensor.community devices on the local network")
                 } else {
+                    Text("Local sensor.community devices", style = MaterialTheme.typography.h6)
+                    Divider(color = Color.Transparent, thickness = 16.dp)
                     for (item in sensorItems) {
                         SensorItem(
                                 item,
