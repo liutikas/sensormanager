@@ -6,7 +6,7 @@ import android.net.Uri
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
 
-fun setupLocalDiscovery(context: Context, discovered: (NsdServiceInfo) -> Unit) {
+fun setupLocalDiscovery(context: Context, discovered: (NsdServiceInfo) -> Unit): () -> Unit {
     val discoveryListener = object : NsdManager.DiscoveryListener {
         override fun onStartDiscoveryFailed(serviceType: String?, errorCode: Int) {
             println("failed $serviceType $errorCode ")
@@ -38,6 +38,9 @@ fun setupLocalDiscovery(context: Context, discovered: (NsdServiceInfo) -> Unit) 
             "_http._tcp.",
             NsdManager.PROTOCOL_DNS_SD,
             discoveryListener)
+    return {
+        nsdManager.stopServiceDiscovery(discoveryListener)
+    }
 }
 
 fun resolveService(context: Context, serviceInfo: NsdServiceInfo?, resolved: (NsdServiceInfo) -> Unit) {

@@ -14,11 +14,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.ui.tooling.preview.Preview
-import net.liutikas.sensormanager.MainActivity
+import net.liutikas.sensormanager.AppState
+import net.liutikas.sensormanager.ConnectPowerAppState
+import net.liutikas.sensormanager.ListDevicesAppState
 import net.liutikas.sensormanager.R
 
 @Composable
-fun mainScreen(navigation: (MainActivity.AppState) -> Unit = {}) {
+fun mainScreen(navigation: (AppState) -> Unit = {}) {
     Scaffold(topBar = {
         TopAppBar(title = { Text("sensor.community") },
                 navigationIcon = {
@@ -26,11 +28,11 @@ fun mainScreen(navigation: (MainActivity.AppState) -> Unit = {}) {
                 })
     }) {
         Column(Modifier.padding(32.dp)) {
-            Button(onClick = { navigation(MainActivity.AppState.CONNECT_POWER) }) {
+            Button(onClick = { navigation(ConnectPowerAppState) }) {
                 Text(text = "Configure new device")
             }
             Divider(color = Color.Transparent, thickness = 16.dp)
-            Button(onClick = { navigation(MainActivity.AppState.LIST_DEVICES) }) {
+            Button(onClick = { navigation(ListDevicesAppState()) }) {
                 Text(text = "List existing devices")
             }
         }

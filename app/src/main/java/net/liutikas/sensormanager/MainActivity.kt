@@ -18,57 +18,72 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import net.liutikas.sensormanager.ui.*
 
-class MainActivity : AppCompatActivity() {
-    enum class AppState {
-        MAIN,
-        CONNECT_POWER,
-        CONFIGURE_DEVICE,
-        LIST_DEVICES
-    }
+sealed class AppState {
+    abstract fun tearDown()
+}
 
-    private var appState: AppState by mutableStateOf(AppState.MAIN)
+object MainScreenAppState : AppState() {
+    override fun tearDown() {
+    }
+}
+
+class ConfigureDeviceAppState : AppState() {
     var startLoading: Boolean by mutableStateOf(false)
     var showConfigurationWebView: Boolean by mutableStateOf(true)
+    var disconnectFromAccessPoint: () -> Unit = {}
 
+    override fun tearDown() {
+        disconnectFromAccessPoint()
+    }
+}
+
+object ConnectPowerAppState : AppState() {
+    override fun tearDown() {
+    }
+}
+
+class ListDevicesAppState : AppState() {
     val discoveredServices = mutableMapOf<String, NsdServiceInfo>()
     var sensorItems: List<SensorItemEntry> by mutableStateOf(emptyList())
-    var disconnect: () -> Unit = {}
+    var stopServiceDiscovery: () -> Unit = {}
+
+    override fun tearDown() {
+        stopServiceDiscovery()
+    }
+}
+
+class MainActivity : AppCompatActivity() {
+    private var appState: AppState by mutableStateOf(MainScreenAppState)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             MyApp {
                 when(appState) {
-                    AppState.MAIN -> mainScreen { goToState(it) }
-                    AppState.CONFIGURE_DEVICE -> configureDeviceScreen { goToState(it) }
-                    AppState.LIST_DEVICES -> listDevicesScreen { goToState(it) }
-                    AppState.CONNECT_POWER -> ConnectPower { goToState(it) }
+                    MainScreenAppState -> mainScreen { goToState(it) }
+                    is ConfigureDeviceAppState -> configureDeviceScreen { goToState(it) }
+                    is ListDevicesAppState -> listDevicesScreen { goToState(it) }
+                    ConnectPowerAppState -> ConnectPower { goToState(it) }
                 }
             }
         }
     }
 
     private fun goToState(newState: AppState) {
-        if (newState == AppState.MAIN) {
-            startLoading = false
-            showConfigurationWebView = true
-            discoveredServices.clear()
-            sensorItems = emptyList()
-            disconnect()
-        }
+        appState.tearDown()
         appState = newState
     }
 
     override fun onBackPressed() {
-        if (appState == AppState.MAIN) {
+        if (appState == MainScreenAppState) {
             super.onBackPressed()
         } else {
-            goToState(AppState.MAIN)
+            goToState(MainScreenAppState)
         }
     }
 
-    private fun updateSensorItems() {
-        sensorItems = discoveredServices.map {
+    private fun updateSensorItems(listDevices: ListDevicesAppState) {
+        listDevices.sensorItems = listDevices.discoveredServices.map {
             SensorItemEntry(
                     it.value.serviceName,
                     if (it.value.host != null) {
@@ -84,24 +99,25 @@ class MainActivity : AppCompatActivity() {
     @Composable
     fun configureDeviceScreen(navigation: (AppState) -> Unit) {
         SubScreen(navigation) {
-            disconnect = remember { handleWifi(this) { startLoading = true } }
+            val configureDevice = appState as ConfigureDeviceAppState
+            configureDevice.disconnectFromAccessPoint = remember { handleWifi(this) { configureDevice.startLoading = true } }
             Column(modifier = Modifier.fillMaxHeight()) {
-                if (showConfigurationWebView) {
+                if (configureDevice.showConfigurationWebView) {
                     Text(modifier = Modifier.padding(16.dp), text = "Enter network name and password. Click save and restart")
                 } else {
                     Text(modifier = Modifier.padding(16.dp), text = "Setup successful. Device should be ready in a few minutes")
                     Image(asset = vectorResource(id = R.drawable.ic_check))
                 }
                 val webview = rememberWebViewWithLifecycle {
-                    showConfigurationWebView = false
+                    configureDevice.showConfigurationWebView = false
                 }
-                if (startLoading) {
+                if (configureDevice.startLoading) {
                     webview.loadUrl("http://192.168.4.1/config")
                 }
                 Column(modifier = Modifier.weight(1f)) {
                     WebViewContainer(webview)
                 }
-                webview.visibility = if (showConfigurationWebView) View.VISIBLE else View.GONE
+                webview.visibility = if (configureDevice.showConfigurationWebView) View.VISIBLE else View.GONE
             }
         }
     }
@@ -109,37 +125,38 @@ class MainActivity : AppCompatActivity() {
     @Composable
     fun listDevicesScreen(navigation: (AppState) -> Unit) {
         SubScreen(navigation) {
+            val listDevices = appState as ListDevicesAppState
             Column(Modifier.padding(32.dp)) {
-                Button(onClick = { navigation(AppState.CONNECT_POWER) }) {
+                Button(onClick = { navigation(ConnectPowerAppState) }) {
                     Text(text = "Configure new device")
                 }
                 Divider(color = Color.Transparent, thickness = 16.dp)
 
-                remember {
+                listDevices.stopServiceDiscovery = remember {
                     setupLocalDiscovery(this@MainActivity) { service ->
-                        discoveredServices[service.serviceName] = service
-                        updateSensorItems()
+                        listDevices.discoveredServices[service.serviceName] = service
+                        updateSensorItems(listDevices)
                     }
                 }
-                if (sensorItems.isEmpty()) {
-                    Text("Searching for sensor.community devices on the local network")
+                Text("Local sensor.community devices", style = MaterialTheme.typography.h6)
+                Divider(color = Color.Transparent, thickness = 16.dp)
+                if (listDevices.sensorItems.isEmpty()) {
+                    Text("Searching for devices")
                 } else {
-                    Text("Local sensor.community devices", style = MaterialTheme.typography.h6)
-                    Divider(color = Color.Transparent, thickness = 16.dp)
-                    for (item in sensorItems) {
+                    for (item in listDevices.sensorItems) {
                         SensorItem(
                                 item,
                                 resolve = {
-                                    sensorItems = discoveredServices.map {
+                                    listDevices.sensorItems = listDevices.discoveredServices.map {
                                         SensorItemEntry(it.value.serviceName, if(it.value.host != null) it.value.host.hostAddress else null, it.value.serviceName == item.name)
                                     }
-                                    resolveService(this@MainActivity, discoveredServices[item.name]) { service ->
-                                        discoveredServices[service.serviceName] = service
-                                        updateSensorItems()
+                                    resolveService(this@MainActivity, listDevices.discoveredServices[item.name]) { service ->
+                                        listDevices.discoveredServices[service.serviceName] = service
+                                        updateSensorItems(listDevices)
                                     }
                                 },
                                 open = {
-                                    openService(this@MainActivity, discoveredServices[item.name]!!)
+                                    openService(this@MainActivity, listDevices.discoveredServices[item.name]!!)
                                 }
                         )
                         Divider(color = Color.Transparent, thickness = 16.dp)
@@ -151,12 +168,12 @@ class MainActivity : AppCompatActivity() {
 }
 
 @Composable
-fun SubScreen(navigation: (MainActivity.AppState) -> Unit, content: @Composable () -> Unit) {
+fun SubScreen(navigation: (AppState) -> Unit, content: @Composable () -> Unit) {
     Scaffold(topBar = {
         TopAppBar(
                 title = { Text("sensor.community")},
                 navigationIcon = {
-                    IconButton(onClick = { navigation(MainActivity.AppState.MAIN)  }) {
+                    IconButton(onClick = { navigation(MainScreenAppState)  }) {
                         Image(asset = vectorResource(id = R.drawable.ic_back))
                     }
                 },

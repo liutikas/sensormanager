@@ -13,12 +13,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.ui.tooling.preview.Preview
-import net.liutikas.sensormanager.MainActivity
+import net.liutikas.sensormanager.AppState
+import net.liutikas.sensormanager.ConfigureDeviceAppState
 import net.liutikas.sensormanager.R
 import net.liutikas.sensormanager.SubScreen
 
 @Composable
-fun ConnectPower(navigation: (MainActivity.AppState) -> Unit = {}) {
+fun ConnectPower(navigation: (AppState) -> Unit = {}) {
     SubScreen(navigation) {
         Column(Modifier.padding(16.dp), horizontalGravity = Alignment.CenterHorizontally) {
             Text(
@@ -31,7 +32,7 @@ fun ConnectPower(navigation: (MainActivity.AppState) -> Unit = {}) {
                     style = MaterialTheme.typography.h4
             )
             Image(asset = vectorResource(id = R.drawable.ic_clock))
-            Button(onClick = { navigation(MainActivity.AppState.CONFIGURE_DEVICE) }) {
+            Button(onClick = { navigation(ConfigureDeviceAppState()) }) {
                 Text(text = "Continue")
             }
         }
