@@ -22,11 +22,6 @@ sealed class AppState {
     abstract fun tearDown()
 }
 
-object MainScreenAppState : AppState() {
-    override fun tearDown() {
-    }
-}
-
 class ConfigureDeviceAppState : AppState() {
     var startLoading: Boolean by mutableStateOf(false)
     var showConfigurationWebView: Boolean by mutableStateOf(true)
@@ -53,14 +48,13 @@ class ListDevicesAppState : AppState() {
 }
 
 class MainActivity : AppCompatActivity() {
-    private var appState: AppState by mutableStateOf(MainScreenAppState)
+    private var appState: AppState by mutableStateOf(ListDevicesAppState())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             MyApp {
                 when(appState) {
-                    MainScreenAppState -> mainScreen { goToState(it) }
                     is ConfigureDeviceAppState -> configureDeviceScreen { goToState(it) }
                     is ListDevicesAppState -> listDevicesScreen { goToState(it) }
                     ConnectPowerAppState -> ConnectPower { goToState(it) }
@@ -75,10 +69,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-        if (appState == MainScreenAppState) {
+        if (appState is ListDevicesAppState) {
+            appState.tearDown()
             super.onBackPressed()
         } else {
-            goToState(MainScreenAppState)
+            goToState(ListDevicesAppState())
         }
     }
 
@@ -124,7 +119,12 @@ class MainActivity : AppCompatActivity() {
 
     @Composable
     fun listDevicesScreen(navigation: (AppState) -> Unit) {
-        SubScreen(navigation) {
+        Scaffold(topBar = {
+            TopAppBar(title = { Text("sensor.community") },
+                    navigationIcon = {
+                        Image(asset = vectorResource(id = R.drawable.ic_sensors), modifier = Modifier.padding(16.dp))
+                    })
+        }) {
             val listDevices = appState as ListDevicesAppState
             Column(Modifier.padding(32.dp)) {
                 Button(onClick = { navigation(ConnectPowerAppState) }) {
@@ -173,7 +173,7 @@ fun SubScreen(navigation: (AppState) -> Unit, content: @Composable () -> Unit) {
         TopAppBar(
                 title = { Text("sensor.community")},
                 navigationIcon = {
-                    IconButton(onClick = { navigation(MainScreenAppState)  }) {
+                    IconButton(onClick = { navigation(ListDevicesAppState())  }) {
                         Image(asset = vectorResource(id = R.drawable.ic_back))
                     }
                 },
