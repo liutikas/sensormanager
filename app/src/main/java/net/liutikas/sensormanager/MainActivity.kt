@@ -17,7 +17,7 @@
 package net.liutikas.sensormanager
 
 import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.Icon
 import androidx.compose.foundation.Text
 import androidx.compose.material.*
@@ -34,7 +34,7 @@ import net.liutikas.sensormanager.state.ListDevicesAppState
 import net.liutikas.sensormanager.ui.ConnectPower
 import net.liutikas.sensormanager.ui.PicturegramTheme
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : ComponentActivity() {
     private var appState: AppState by mutableStateOf(ListDevicesAppState())
 
     override fun onCreate(savedInstanceState: Bundle?) {
