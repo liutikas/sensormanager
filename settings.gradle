@@ -1,2 +1,2 @@
-rootProject.name = "Picturegram"
+rootProject.name = "sensormanager"
 include ':app'
