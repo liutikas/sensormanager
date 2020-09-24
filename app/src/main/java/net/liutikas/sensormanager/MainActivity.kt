@@ -17,24 +17,22 @@
 package net.liutikas.sensormanager
 
 import android.os.Bundle
-import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.Icon
 import androidx.compose.foundation.Text
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.setContent
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.unit.dp
 import net.liutikas.sensormanager.state.AppState
 import net.liutikas.sensormanager.state.ConfigureDeviceAppState
 import net.liutikas.sensormanager.state.ConnectPowerAppState
 import net.liutikas.sensormanager.state.ListDevicesAppState
-import net.liutikas.sensormanager.ui.*
+import net.liutikas.sensormanager.ui.ConnectPower
+import net.liutikas.sensormanager.ui.PicturegramTheme
 
 class MainActivity : AppCompatActivity() {
     private var appState: AppState by mutableStateOf(ListDevicesAppState())
@@ -44,7 +42,9 @@ class MainActivity : AppCompatActivity() {
         setContent {
             MyApp {
                 when(appState) {
-                    is ConfigureDeviceAppState -> configureDeviceScreen { goToState(it) }
+                    is ConfigureDeviceAppState -> {
+                        configureDeviceScreen(this, appState as ConfigureDeviceAppState) { goToState(it) }
+                    }
                     is ListDevicesAppState -> {
                         listDevicesScreen(this, appState as ListDevicesAppState) { goToState(it) }
                     }
@@ -65,32 +65,6 @@ class MainActivity : AppCompatActivity() {
             super.onBackPressed()
         } else {
             goToState(ListDevicesAppState())
-        }
-    }
-
-    @Composable
-    fun configureDeviceScreen(navigation: (AppState) -> Unit) {
-        SubScreen(navigation) {
-            val configureDevice = appState as ConfigureDeviceAppState
-            configureDevice.disconnectFromAccessPoint = remember { handleWifi(this) { configureDevice.startLoading = true } }
-            Column(modifier = Modifier.fillMaxHeight()) {
-                if (configureDevice.showConfigurationWebView) {
-                    Text(modifier = Modifier.padding(16.dp), text = "Enter network name and password. Click save and restart")
-                } else {
-                    Text(modifier = Modifier.padding(16.dp), text = "Setup successful. Device should be ready in a few minutes")
-                    Icon(asset = vectorResource(id = R.drawable.ic_check))
-                }
-                val webview = rememberWebViewWithLifecycle {
-                    configureDevice.showConfigurationWebView = false
-                }
-                if (configureDevice.startLoading) {
-                    webview.loadUrl("http://192.168.4.1/config")
-                }
-                Column(modifier = Modifier.weight(1f)) {
-                    WebViewContainer(webview)
-                }
-                webview.visibility = if (configureDevice.showConfigurationWebView) View.VISIBLE else View.GONE
-            }
         }
     }
 }
