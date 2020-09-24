@@ -19,7 +19,7 @@ package net.liutikas.sensormanager
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.Icon
 import androidx.compose.foundation.ScrollableColumn
 import androidx.compose.foundation.Text
 import androidx.compose.foundation.layout.Column
@@ -92,7 +92,7 @@ class MainActivity : AppCompatActivity() {
                     Text(modifier = Modifier.padding(16.dp), text = "Enter network name and password. Click save and restart")
                 } else {
                     Text(modifier = Modifier.padding(16.dp), text = "Setup successful. Device should be ready in a few minutes")
-                    Image(asset = vectorResource(id = R.drawable.ic_check))
+                    Icon(asset = vectorResource(id = R.drawable.ic_check))
                 }
                 val webview = rememberWebViewWithLifecycle {
                     configureDevice.showConfigurationWebView = false
@@ -113,7 +113,7 @@ class MainActivity : AppCompatActivity() {
         Scaffold(topBar = {
             TopAppBar(title = { Text("sensor.community") },
                     navigationIcon = {
-                        Image(asset = vectorResource(id = R.drawable.ic_sensors), modifier = Modifier.padding(16.dp))
+                        Icon(asset = vectorResource(id = R.drawable.ic_sensors), modifier = Modifier.padding(16.dp))
                     })
         }) {
             val listDevices = appState as ListDevicesAppState
@@ -165,7 +165,7 @@ fun SubScreen(navigation: (AppState) -> Unit, content: @Composable () -> Unit) {
                 title = { Text("sensor.community")},
                 navigationIcon = {
                     IconButton(onClick = { navigation(ListDevicesAppState())  }) {
-                        Image(asset = vectorResource(id = R.drawable.ic_back))
+                        Icon(asset = vectorResource(id = R.drawable.ic_back))
                     }
                 },
         )
