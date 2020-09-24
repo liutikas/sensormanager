@@ -6,3 +6,5 @@ new devices, as well as view existing sensors on the network, making it easy to 
 local state.
 
 This application is compatible with devices running Android API 29 and newer.
+
+<img src="readme-resources/screenshot.png" alt="Screenshot">
