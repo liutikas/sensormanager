@@ -37,7 +37,7 @@ import net.liutikas.sensormanager.SubScreen
 @Composable
 fun ConnectPower(navigation: (AppState) -> Unit = {}) {
     SubScreen(navigation) {
-        Column(Modifier.padding(16.dp), horizontalGravity = Alignment.CenterHorizontally) {
+        Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                     text = "1. Connect your sensor to power",
                     style = MaterialTheme.typography.h4
