@@ -16,7 +16,6 @@
 
 package net.liutikas.sensormanager
 
-import android.net.nsd.NsdServiceInfo
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
@@ -32,36 +31,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.setContent
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
+import net.liutikas.sensormanager.state.AppState
+import net.liutikas.sensormanager.state.ConfigureDeviceAppState
+import net.liutikas.sensormanager.state.ConnectPowerAppState
+import net.liutikas.sensormanager.state.ListDevicesAppState
 import net.liutikas.sensormanager.ui.*
-
-sealed class AppState {
-    abstract fun tearDown()
-}
-
-class ConfigureDeviceAppState : AppState() {
-    var startLoading: Boolean by mutableStateOf(false)
-    var showConfigurationWebView: Boolean by mutableStateOf(true)
-    var disconnectFromAccessPoint: () -> Unit = {}
-
-    override fun tearDown() {
-        disconnectFromAccessPoint()
-    }
-}
-
-object ConnectPowerAppState : AppState() {
-    override fun tearDown() {
-    }
-}
-
-class ListDevicesAppState : AppState() {
-    val discoveredServices = mutableMapOf<String, NsdServiceInfo>()
-    var sensorItems: List<SensorItemEntry> by mutableStateOf(emptyList())
-    var stopServiceDiscovery: () -> Unit = {}
-
-    override fun tearDown() {
-        stopServiceDiscovery()
-    }
-}
 
 class MainActivity : AppCompatActivity() {
     private var appState: AppState by mutableStateOf(ListDevicesAppState())
