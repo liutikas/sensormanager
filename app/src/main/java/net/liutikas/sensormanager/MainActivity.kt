@@ -20,7 +20,6 @@ import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.Icon
-import androidx.compose.foundation.ScrollableColumn
 import androidx.compose.foundation.Text
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -28,7 +27,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.setContent
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
@@ -47,7 +45,9 @@ class MainActivity : AppCompatActivity() {
             MyApp {
                 when(appState) {
                     is ConfigureDeviceAppState -> configureDeviceScreen { goToState(it) }
-                    is ListDevicesAppState -> listDevicesScreen { goToState(it) }
+                    is ListDevicesAppState -> {
+                        listDevicesScreen(this, appState as ListDevicesAppState) { goToState(it) }
+                    }
                     ConnectPowerAppState -> ConnectPower { goToState(it) }
                 }
             }
@@ -65,20 +65,6 @@ class MainActivity : AppCompatActivity() {
             super.onBackPressed()
         } else {
             goToState(ListDevicesAppState())
-        }
-    }
-
-    private fun updateSensorItems(listDevices: ListDevicesAppState) {
-        listDevices.sensorItems = listDevices.discoveredServices.map {
-            SensorItemEntry(
-                    it.value.serviceName,
-                    if (it.value.host != null) {
-                        it.value.host.hostAddress
-                    } else {
-                        null
-                    },
-                    false
-            )
         }
     }
 
@@ -104,55 +90,6 @@ class MainActivity : AppCompatActivity() {
                     WebViewContainer(webview)
                 }
                 webview.visibility = if (configureDevice.showConfigurationWebView) View.VISIBLE else View.GONE
-            }
-        }
-    }
-
-    @Composable
-    fun listDevicesScreen(navigation: (AppState) -> Unit) {
-        Scaffold(topBar = {
-            TopAppBar(title = { Text("sensor.community") },
-                    navigationIcon = {
-                        Icon(asset = vectorResource(id = R.drawable.ic_sensors), modifier = Modifier.padding(16.dp))
-                    })
-        }) {
-            val listDevices = appState as ListDevicesAppState
-            ScrollableColumn(Modifier.padding(32.dp)) {
-                Button(onClick = { navigation(ConnectPowerAppState) }) {
-                    Text(text = "Configure new device")
-                }
-                Divider(color = Color.Transparent, thickness = 16.dp)
-
-                listDevices.stopServiceDiscovery = remember {
-                    setupLocalDiscovery(this@MainActivity) { service ->
-                        listDevices.discoveredServices[service.serviceName] = service
-                        updateSensorItems(listDevices)
-                    }
-                }
-                Text("Local sensor.community devices", style = MaterialTheme.typography.h6)
-                Divider(color = Color.Transparent, thickness = 16.dp)
-                if (listDevices.sensorItems.isEmpty()) {
-                    Text("Searching for devices")
-                } else {
-                    for (item in listDevices.sensorItems) {
-                        SensorItem(
-                                item,
-                                resolve = {
-                                    listDevices.sensorItems = listDevices.discoveredServices.map {
-                                        SensorItemEntry(it.value.serviceName, if(it.value.host != null) it.value.host.hostAddress else null, it.value.serviceName == item.name)
-                                    }
-                                    resolveService(this@MainActivity, listDevices.discoveredServices[item.name]) { service ->
-                                        listDevices.discoveredServices[service.serviceName] = service
-                                        updateSensorItems(listDevices)
-                                    }
-                                },
-                                open = {
-                                    openService(this@MainActivity, listDevices.discoveredServices[item.name]!!)
-                                }
-                        )
-                        Divider(color = Color.Transparent, thickness = 16.dp)
-                    }
-                }
             }
         }
     }
