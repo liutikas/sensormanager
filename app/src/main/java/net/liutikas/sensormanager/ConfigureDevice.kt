@@ -40,19 +40,20 @@ fun configureDeviceScreen(
     navigation: (AppState) -> Unit
 ) {
     SubScreen(navigation) {
-        appState.disconnectFromAccessPoint = remember { handleWifi(context) { appState.startLoading = true } }
+        appState.disconnectFromAccessPoint = remember { handleWifi(context) { appState.networkConnected = true } }
         Column(modifier = Modifier.fillMaxHeight()) {
-            if (appState.showConfigurationWebView) {
+            if (appState.networkConnected && appState.showConfigurationWebView) {
                 Text(modifier = Modifier.padding(16.dp), text = "Enter network name and password. Click save and restart")
-            } else {
+            } else if (appState.networkConnected) {
                 Text(modifier = Modifier.padding(16.dp), text = "Setup successful. Device should be ready in a few minutes")
                 Icon(asset = vectorResource(id = R.drawable.ic_check))
             }
             val webview = rememberWebViewWithLifecycle {
                 appState.showConfigurationWebView = false
             }
-            if (appState.startLoading) {
+            if (appState.networkConnected) {
                 webview.loadUrl("http://192.168.4.1/config")
+
             }
             Column(modifier = Modifier.weight(1f)) {
                 WebViewContainer(webview)

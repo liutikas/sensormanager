@@ -27,7 +27,7 @@ sealed class AppState {
 }
 
 class ConfigureDeviceAppState : AppState() {
-    var startLoading: Boolean by mutableStateOf(false)
+    var networkConnected: Boolean by mutableStateOf(false)
     var showConfigurationWebView: Boolean by mutableStateOf(true)
     var disconnectFromAccessPoint: () -> Unit = {}
 
