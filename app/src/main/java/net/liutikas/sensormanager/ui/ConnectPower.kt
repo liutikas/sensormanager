@@ -29,8 +29,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.ui.tooling.preview.Preview
-import net.liutikas.sensormanager.AppState
-import net.liutikas.sensormanager.ConfigureDeviceAppState
+import net.liutikas.sensormanager.state.AppState
+import net.liutikas.sensormanager.state.ConfigureDeviceAppState
 import net.liutikas.sensormanager.R
 import net.liutikas.sensormanager.SubScreen
 

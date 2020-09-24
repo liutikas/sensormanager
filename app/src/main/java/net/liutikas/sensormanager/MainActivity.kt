@@ -20,6 +20,7 @@ import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.ScrollableColumn
 import androidx.compose.foundation.Text
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -116,7 +117,7 @@ class MainActivity : AppCompatActivity() {
                     })
         }) {
             val listDevices = appState as ListDevicesAppState
-            Column(Modifier.padding(32.dp)) {
+            ScrollableColumn(Modifier.padding(32.dp)) {
                 Button(onClick = { navigation(ConnectPowerAppState) }) {
                     Text(text = "Configure new device")
                 }
