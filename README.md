@@ -8,3 +8,5 @@ local state.
 This application is compatible with devices running Android API 29 and newer.
 
 <img src="readme-resources/screenshot.png" alt="Screenshot">
+
+This is not an officially supported Google product.
