@@ -31,6 +31,9 @@ android {
     kotlinOptions {
         jvmTarget = '1.8'
         useIR = true
+        freeCompilerArgs += [
+                "-Xopt-in=kotlin.RequiresOptIn" // Needed for experimental coroutines APIs
+        ]
     }
     buildFeatures {
         compose true

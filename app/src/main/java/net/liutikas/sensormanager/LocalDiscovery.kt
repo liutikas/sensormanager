@@ -21,65 +21,75 @@ import android.content.Intent
 import android.net.Uri
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
-
-fun setupLocalDiscovery(context: Context, discovered: (NsdServiceInfo) -> Unit): () -> Unit {
-    val discoveryListener = object : NsdManager.DiscoveryListener {
-        override fun onStartDiscoveryFailed(serviceType: String?, errorCode: Int) {
-            println("failed $serviceType $errorCode ")
-        }
-
-        override fun onStopDiscoveryFailed(serviceType: String?, errorCode: Int) {
-        }
-
-        override fun onDiscoveryStarted(serviceType: String?) {
-        }
-
-        override fun onDiscoveryStopped(serviceType: String?) {
-        }
-
-        override fun onServiceFound(serviceInfo: NsdServiceInfo?) {
-            if (serviceInfo == null) return
-            if (serviceInfo.serviceName.startsWith("airRohr-")) {
-                discovered(serviceInfo)
-            }
-            println("Service discovered: " + serviceInfo.getServiceName() + " host:" + serviceInfo.getHost() + " port:"
-                    + serviceInfo.getPort() + " type:" + serviceInfo.getServiceType());
-        }
-
-        override fun onServiceLost(serviceInfo: NsdServiceInfo?) {
-        }
-    }
-    val nsdManager = context.getSystemService(Context.NSD_SERVICE) as NsdManager
-    nsdManager.discoverServices(
-            "_http._tcp.",
-            NsdManager.PROTOCOL_DNS_SD,
-            discoveryListener)
-    return {
-        nsdManager.stopServiceDiscovery(discoveryListener)
-    }
-}
-
-fun resolveService(context: Context, serviceInfo: NsdServiceInfo?, resolved: (NsdServiceInfo) -> Unit) {
-    val discoveryListener = object: NsdManager.ResolveListener {
-        override fun onResolveFailed(serviceInfo: NsdServiceInfo?, errorCode: Int) {
-            println("Service resolve FAILED $errorCode")
-        }
-
-        override fun onServiceResolved(serviceInfo: NsdServiceInfo?) {
-            if (serviceInfo == null) return
-            resolved(serviceInfo)
-            println("Service resolved: " + serviceInfo.getServiceName() + " host:" + serviceInfo.getHost() + " port:"
-                    + serviceInfo.getPort() + " type:" + serviceInfo.getServiceType());
-        }
-
-    }
-    val nsdManager = context.getSystemService(Context.NSD_SERVICE) as NsdManager
-    nsdManager.resolveService(serviceInfo, discoveryListener)
-}
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 fun openService(context: Context, serviceInfo: NsdServiceInfo) {
     val url = "http://${serviceInfo.host.hostAddress}"
     val i = Intent(Intent.ACTION_VIEW)
     i.data = Uri.parse(url)
     context.startActivity(i)
+}
+
+class NetworkServiceDiscoveryFailedException(
+    errorCode: Int
+) : Exception("network service discovery failed; error $errorCode")
+
+data class NsdServiceEvent(
+    val type: Type,
+    val serviceInfo: NsdServiceInfo,
+) {
+    enum class Type { Lost, Found }
+}
+
+@Suppress("ThrowableNotThrown")
+@OptIn(ExperimentalCoroutinesApi::class)
+fun NsdManager.serviceDiscovery(serviceType: String) = channelFlow<NsdServiceEvent> {
+    val listener = object : NsdManager.DiscoveryListener {
+        override fun onStartDiscoveryFailed(serviceType: String?, errorCode: Int) {
+            close(NetworkServiceDiscoveryFailedException(errorCode))
+        }
+
+        override fun onStopDiscoveryFailed(serviceType: String?, errorCode: Int) {
+            close(NetworkServiceDiscoveryFailedException(errorCode))
+        }
+
+        override fun onDiscoveryStarted(serviceType: String?) {
+        }
+
+        override fun onDiscoveryStopped(serviceType: String?) {
+            close()
+        }
+
+        override fun onServiceFound(serviceInfo: NsdServiceInfo) {
+            offer(NsdServiceEvent(NsdServiceEvent.Type.Found, serviceInfo))
+        }
+
+        override fun onServiceLost(serviceInfo: NsdServiceInfo) {
+            offer(NsdServiceEvent(NsdServiceEvent.Type.Lost, serviceInfo))
+        }
+    }
+
+    discoverServices(serviceType, NsdManager.PROTOCOL_DNS_SD, listener)
+    awaitClose { stopServiceDiscovery(listener) }
+}
+
+suspend fun NsdManager.resolveService(
+    serviceInfo: NsdServiceInfo
+): NsdServiceInfo = suspendCancellableCoroutine { co ->
+    val listener = object : NsdManager.ResolveListener {
+        override fun onServiceResolved(serviceInfo: NsdServiceInfo) {
+            co.resume(serviceInfo)
+        }
+
+        @Suppress("ThrowableNotThrown")
+        override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
+            co.resumeWithException(NetworkServiceDiscoveryFailedException(errorCode))
+        }
+    }
+    resolveService(serviceInfo, listener)
 }

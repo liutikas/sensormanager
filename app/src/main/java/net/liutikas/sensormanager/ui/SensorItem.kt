@@ -35,7 +35,6 @@ import net.liutikas.sensormanager.R
 @Composable
 fun SensorItem(
         item: SensorItemEntry,
-        resolve: () -> Unit = {},
         open: () -> Unit = {},
 ) {
     Row {
@@ -49,7 +48,7 @@ fun SensorItem(
                 )
             } else {
                 Text(
-                        text = "IP address pending",
+                        text = "IP address resolving...",
                         style = MaterialTheme.typography.caption
                 )
             }
@@ -60,10 +59,6 @@ fun SensorItem(
             } else if (item.ipAddress != null) {
                 Button(onClick = open) {
                     Text("Open")
-                }
-            } else {
-                Button(onClick = resolve) {
-                    Text("Resolve IP")
                 }
             }
         }

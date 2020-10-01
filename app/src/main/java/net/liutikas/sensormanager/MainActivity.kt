@@ -41,13 +41,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MyApp {
-                when(appState) {
-                    is ConfigureDeviceAppState -> {
-                        configureDeviceScreen(this, appState as ConfigureDeviceAppState) { goToState(it) }
-                    }
-                    is ListDevicesAppState -> {
-                        listDevicesScreen(this, appState as ListDevicesAppState) { goToState(it) }
-                    }
+                when(val state = appState) {
+                    is ConfigureDeviceAppState -> ConfigureDeviceScreen(this, state) { goToState(it) }
+                    is ListDevicesAppState -> ListDevicesScreen(this, state) { goToState(it) }
                     ConnectPowerAppState -> ConnectPower { goToState(it) }
                 }
             }

@@ -17,25 +17,26 @@
 package net.liutikas.sensormanager
 
 import android.content.Context
+import android.net.nsd.NsdManager
 import androidx.compose.foundation.Icon
 import androidx.compose.foundation.ScrollableColumn
 import androidx.compose.foundation.Text
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.launchInComposition
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
+import androidx.core.content.getSystemService
 import net.liutikas.sensormanager.state.AppState
 import net.liutikas.sensormanager.state.ConnectPowerAppState
 import net.liutikas.sensormanager.state.ListDevicesAppState
 import net.liutikas.sensormanager.ui.SensorItem
-import net.liutikas.sensormanager.ui.SensorItemEntry
 
 @Composable
-fun listDevicesScreen(
+fun ListDevicesScreen(
     context: Context,
     appState: ListDevicesAppState,
     navigation: (AppState) -> Unit
@@ -52,50 +53,28 @@ fun listDevicesScreen(
             }
             Divider(color = Color.Transparent, thickness = 16.dp)
 
-            appState.stopServiceDiscovery = remember {
-                setupLocalDiscovery(context) { service ->
-                    appState.discoveredServices[service.serviceName] = service
-                    updateSensorItems(appState)
-                }
+            launchInComposition {
+                val nsdManager = context.getSystemService<NsdManager>() ?: error("NsdManager not available")
+                appState.runDiscovery(nsdManager)
             }
+
             Text("Local sensor.community devices", style = MaterialTheme.typography.h6)
             Divider(color = Color.Transparent, thickness = 16.dp)
             if (appState.sensorItems.isEmpty()) {
                 Text("Searching for devices")
             } else {
-                for (item in appState.sensorItems) {
+                for ((_, item) in appState.sensorItems) {
                     SensorItem(
                         item,
-                        resolve = {
-                            appState.sensorItems = appState.discoveredServices.map {
-                                SensorItemEntry(it.value.serviceName, if(it.value.host != null) it.value.host.hostAddress else null, it.value.serviceName == item.name)
-                            }
-                            resolveService(context, appState.discoveredServices[item.name]) { service ->
-                                appState.discoveredServices[service.serviceName] = service
-                                updateSensorItems(appState)
-                            }
-                        },
                         open = {
-                            openService(context, appState.discoveredServices[item.name]!!)
+                            openService(context,
+                                appState.discoveredServices[item.name] ?: error("Tried to open a sensor URL before IP was resolved")
+                            )
                         }
                     )
                     Divider(color = Color.Transparent, thickness = 16.dp)
                 }
             }
         }
-    }
-}
-
-private fun updateSensorItems(listDevices: ListDevicesAppState) {
-    listDevices.sensorItems = listDevices.discoveredServices.map {
-        SensorItemEntry(
-            it.value.serviceName,
-            if (it.value.host != null) {
-                it.value.host.hostAddress
-            } else {
-                null
-            },
-            false
-        )
     }
 }

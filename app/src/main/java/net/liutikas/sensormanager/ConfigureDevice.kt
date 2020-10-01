@@ -34,7 +34,7 @@ import net.liutikas.sensormanager.ui.WebViewContainer
 import net.liutikas.sensormanager.ui.rememberWebViewWithLifecycle
 
 @Composable
-fun configureDeviceScreen(
+fun ConfigureDeviceScreen(
     context: Context,
     appState: ConfigureDeviceAppState,
     navigation: (AppState) -> Unit

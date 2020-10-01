@@ -16,10 +16,24 @@
 
 package net.liutikas.sensormanager.state
 
+import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import net.liutikas.sensormanager.NsdServiceEvent
+import net.liutikas.sensormanager.resolveService
+import net.liutikas.sensormanager.serviceDiscovery
 import net.liutikas.sensormanager.ui.SensorItemEntry
 
 sealed class AppState {
@@ -42,11 +56,51 @@ object ConnectPowerAppState : AppState() {
 }
 
 class ListDevicesAppState : AppState() {
-    val discoveredServices = mutableMapOf<String, NsdServiceInfo>()
-    var sensorItems: List<SensorItemEntry> by mutableStateOf(emptyList())
-    var stopServiceDiscovery: () -> Unit = {}
+    private val _discoveredServices = mutableStateMapOf<String, NsdServiceInfo>()
+    val discoveredServices: Map<String, NsdServiceInfo> get() = _discoveredServices
+    private val _sensorItems = mutableStateMapOf<String, SensorItemEntry>()
+    val sensorItems: Map<String, SensorItemEntry> get() = _sensorItems
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    suspend fun runDiscovery(nsdManager: NsdManager) = coroutineScope {
+        val resolveMutex = Mutex()
+        nsdManager.serviceDiscovery("_http._tcp.")
+            .onStart { println("starting service discovery") }
+            .onEach { println("service discovery event: $it") }
+            .onCompletion { println("ending service discovery; reason: $it") }
+            .collect { (type, info) ->
+                when (type) {
+                    NsdServiceEvent.Type.Found -> {
+                        // The concurrent accesses between this and the resolveService result
+                        // writes below are ok because these collections are backed by snapshots.
+                        // (Also we're called on a single-threaded dispatcher anyway.)
+                        _discoveredServices[info.serviceName] = info
+                        _sensorItems[info.serviceName] = SensorItemEntry(
+                            info.serviceName,
+                            info.host?.hostAddress,
+                            true
+                        )
+                        launch {
+                            // resolveService can't be used concurrently??
+                            resolveMutex.withLock {
+                                val resolved = nsdManager.resolveService(info)
+                                _discoveredServices[info.serviceName] = resolved
+                                _sensorItems[info.serviceName] = SensorItemEntry(
+                                    resolved.serviceName,
+                                    resolved.host?.hostAddress,
+                                    false
+                                )
+                            }
+                        }
+                    }
+                    NsdServiceEvent.Type.Lost -> {
+                        _discoveredServices.remove(info.serviceName)
+                        _sensorItems.remove(info.serviceName)
+                    }
+                }
+            }
+    }
 
     override fun tearDown() {
-        stopServiceDiscovery()
     }
 }
