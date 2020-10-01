@@ -22,8 +22,15 @@ import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.net.wifi.WifiNetworkSpecifier
+import android.os.Build
 import android.os.PatternMatcher
+import androidx.annotation.ChecksSdkIntAtLeast
+import androidx.annotation.RequiresApi
 
+@ChecksSdkIntAtLeast(api = 29)
+fun isDeviceConfigurationAvailable() = Build.VERSION.SDK_INT >= 29
+
+@RequiresApi(29)
 fun handleWifi(context: Context, networkReadyListener: () -> Unit): () -> Unit {
     val wifiNetworkSpecifier = WifiNetworkSpecifier.Builder()
             .setSsidPattern(PatternMatcher("airRohr-", PatternMatcher.PATTERN_PREFIX))

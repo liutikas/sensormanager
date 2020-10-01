@@ -48,10 +48,12 @@ fun ListDevicesScreen(
             })
     }) {
         ScrollableColumn(Modifier.padding(32.dp)) {
-            Button(onClick = { navigation(ConnectPowerAppState) }) {
-                Text(text = "Configure new device")
+            if (isDeviceConfigurationAvailable()) {
+                Button(onClick = { navigation(ConnectPowerAppState) }) {
+                    Text(text = "Configure new device")
+                }
+                Divider(color = Color.Transparent, thickness = 16.dp)
             }
-            Divider(color = Color.Transparent, thickness = 16.dp)
 
             launchInComposition {
                 val nsdManager = context.getSystemService<NsdManager>() ?: error("NsdManager not available")

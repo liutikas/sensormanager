@@ -40,25 +40,28 @@ fun ConfigureDeviceScreen(
     navigation: (AppState) -> Unit
 ) {
     SubScreen(navigation) {
-        appState.disconnectFromAccessPoint = remember { handleWifi(context) { appState.networkConnected = true } }
-        Column(modifier = Modifier.fillMaxHeight()) {
-            if (appState.networkConnected && appState.showConfigurationWebView) {
-                Text(modifier = Modifier.padding(16.dp), text = "Enter network name and password. Click save and restart")
-            } else if (appState.networkConnected) {
-                Text(modifier = Modifier.padding(16.dp), text = "Setup successful. Device should be ready in a few minutes")
-                Icon(asset = vectorResource(id = R.drawable.ic_check))
+        if (isDeviceConfigurationAvailable()) {
+            appState.disconnectFromAccessPoint = remember { handleWifi(context) { appState.networkConnected = true } }
+            Column(modifier = Modifier.fillMaxHeight()) {
+                if (appState.networkConnected && appState.showConfigurationWebView) {
+                    Text(modifier = Modifier.padding(16.dp), text = "Enter network name and password. Click save and restart")
+                } else if (appState.networkConnected) {
+                    Text(modifier = Modifier.padding(16.dp), text = "Setup successful. Device should be ready in a few minutes")
+                    Icon(asset = vectorResource(id = R.drawable.ic_check))
+                }
+                val webview = rememberWebViewWithLifecycle {
+                    appState.showConfigurationWebView = false
+                }
+                if (appState.networkConnected) {
+                    webview.loadUrl("http://192.168.4.1/config")
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    WebViewContainer(webview)
+                }
+                webview.visibility = if (appState.showConfigurationWebView) View.VISIBLE else View.GONE
             }
-            val webview = rememberWebViewWithLifecycle {
-                appState.showConfigurationWebView = false
-            }
-            if (appState.networkConnected) {
-                webview.loadUrl("http://192.168.4.1/config")
-
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                WebViewContainer(webview)
-            }
-            webview.visibility = if (appState.showConfigurationWebView) View.VISIBLE else View.GONE
+        } else {
+            Text("New device configuration unavailable on this device.")
         }
     }
 }
