@@ -53,7 +53,7 @@ fun ConnectPower(navigation: (AppState) -> Unit = {}) {
 
 @Preview
 @Composable
-fun previewConnectPower() {
+fun PreviewConnectPower() {
     PicturegramTheme {
         Surface {
             ConnectPower()
