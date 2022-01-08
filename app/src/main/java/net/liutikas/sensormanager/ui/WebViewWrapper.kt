@@ -48,7 +48,7 @@ fun rememberWebViewWithLifecycle(submittedFormListener: () -> Unit): WebView {
 
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
-                    view?.loadUrl(ONCLICK_INJECTOR);
+                    view?.loadUrl(ONCLICK_INJECTOR)
                 }
             }
             settings.apply {
