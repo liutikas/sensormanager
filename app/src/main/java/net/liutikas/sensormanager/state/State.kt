@@ -65,9 +65,9 @@ class ListDevicesAppState : AppState() {
     suspend fun runDiscovery(nsdManager: NsdManager) = coroutineScope {
         val resolveMutex = Mutex()
         nsdManager.serviceDiscovery("_http._tcp.")
-            .onStart { println("starting service discovery") }
-            .onEach { println("service discovery event: $it") }
-            .onCompletion { println("ending service discovery; reason: $it") }
+            .onStart { println("Starting service discovery") }
+            .onEach { println("Service discovery event: $it") }
+            .onCompletion { println("Ending service discovery; reason: $it") }
             .collect { (type, info) ->
                 when (type) {
                     NsdServiceEvent.Type.Found -> {
