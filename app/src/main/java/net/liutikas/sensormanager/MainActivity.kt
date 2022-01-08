@@ -18,15 +18,13 @@ package net.liutikas.sensormanager
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.compose.foundation.Icon
-import androidx.compose.foundation.Text
+import androidx.activity.compose.setContent
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.setContent
-import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.res.painterResource
 import net.liutikas.sensormanager.state.AppState
 import net.liutikas.sensormanager.state.ConfigureDeviceAppState
 import net.liutikas.sensormanager.state.ConnectPowerAppState
@@ -72,7 +70,10 @@ fun SubScreen(navigation: (AppState) -> Unit, content: @Composable () -> Unit) {
                 title = { Text("sensor.community")},
                 navigationIcon = {
                     IconButton(onClick = { navigation(ListDevicesAppState())  }) {
-                        Icon(asset = vectorResource(id = R.drawable.ic_back))
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_back),
+                            contentDescription = "Back"
+                        )
                     }
                 },
         )

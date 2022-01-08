@@ -18,16 +18,14 @@ package net.liutikas.sensormanager
 
 import android.content.Context
 import android.net.nsd.NsdManager
-import androidx.compose.foundation.Icon
-import androidx.compose.foundation.ScrollableColumn
-import androidx.compose.foundation.Text
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.launchInComposition
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.getSystemService
 import net.liutikas.sensormanager.state.AppState
@@ -44,18 +42,21 @@ fun ListDevicesScreen(
     Scaffold(topBar = {
         TopAppBar(title = { Text("sensor.community") },
             navigationIcon = {
-                Icon(asset = vectorResource(id = R.drawable.ic_sensors), modifier = Modifier.padding(16.dp))
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_sensors),
+                    contentDescription = null,
+                    modifier = Modifier.padding(16.dp)
+                )
             })
     }) {
-        ScrollableColumn(Modifier.padding(32.dp)) {
+        Column(Modifier.padding(32.dp)) {
             if (isDeviceConfigurationAvailable()) {
                 Button(onClick = { navigation(ConnectPowerAppState) }) {
                     Text(text = "Configure new device")
                 }
                 Divider(color = Color.Transparent, thickness = 16.dp)
             }
-
-            launchInComposition {
+            LaunchedEffect(Unit) {
                 val nsdManager = context.getSystemService<NsdManager>() ?: error("NsdManager not available")
                 appState.runDiscovery(nsdManager)
             }

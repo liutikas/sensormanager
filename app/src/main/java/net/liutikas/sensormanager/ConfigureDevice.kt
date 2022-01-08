@@ -18,15 +18,15 @@ package net.liutikas.sensormanager
 
 import android.content.Context
 import android.view.View
-import androidx.compose.foundation.Icon
-import androidx.compose.foundation.Text
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.Icon
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import net.liutikas.sensormanager.state.AppState
 import net.liutikas.sensormanager.state.ConfigureDeviceAppState
@@ -47,7 +47,7 @@ fun ConfigureDeviceScreen(
                     Text(modifier = Modifier.padding(16.dp), text = "Enter network name and password. Click save and restart")
                 } else if (appState.networkConnected) {
                     Text(modifier = Modifier.padding(16.dp), text = "Setup successful. Device should be ready in a few minutes")
-                    Icon(asset = vectorResource(id = R.drawable.ic_check))
+                    Icon(painter = painterResource(id = R.drawable.ic_check), contentDescription = null)
                 }
                 val webview = rememberWebViewWithLifecycle {
                     appState.showConfigurationWebView = false

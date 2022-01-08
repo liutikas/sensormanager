@@ -16,19 +16,15 @@
 
 package net.liutikas.sensormanager.ui
 
-import androidx.compose.foundation.Icon
-import androidx.compose.foundation.Text
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Button
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
+import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.ui.tooling.preview.Preview
 import net.liutikas.sensormanager.R
 import net.liutikas.sensormanager.SubScreen
 import net.liutikas.sensormanager.state.AppState
@@ -42,12 +38,12 @@ fun ConnectPower(navigation: (AppState) -> Unit = {}) {
                     text = "1. Connect your sensor to power",
                     style = MaterialTheme.typography.h4
             )
-            Icon(asset = vectorResource(id = R.drawable.ic_power))
+            Icon(painter = painterResource(id = R.drawable.ic_power), contentDescription = null)
             Text(
                     text = "2. Wait for 1 minute",
                     style = MaterialTheme.typography.h4
             )
-            Icon(asset = vectorResource(id = R.drawable.ic_clock))
+            Icon(painter = painterResource(id = R.drawable.ic_clock), contentDescription = null)
             Button(onClick = { navigation(ConfigureDeviceAppState()) }) {
                 Text(text = "Continue")
             }

@@ -22,10 +22,10 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.onCommit
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.ContextAmbient
-import androidx.compose.ui.platform.LifecycleOwnerAmbient
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -37,7 +37,7 @@ fun WebViewContainer(webView: WebView) {
 
 @Composable
 fun rememberWebViewWithLifecycle(submittedFormListener: () -> Unit): WebView {
-    val context = ContextAmbient.current
+    val context = LocalContext.current
     val webview = remember {
         WebView(context).apply {
             webViewClient = object : WebViewClient() {
@@ -59,8 +59,8 @@ fun rememberWebViewWithLifecycle(submittedFormListener: () -> Unit): WebView {
         }
     }
     val lifecycleObserver = rememberWebViewLifecycleObserver(webview)
-    val lifecycle = LifecycleOwnerAmbient.current.lifecycle
-    onCommit(lifecycle) {
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(lifecycle) {
         lifecycle.addObserver(lifecycleObserver)
         onDispose {
             lifecycle.removeObserver(lifecycleObserver)

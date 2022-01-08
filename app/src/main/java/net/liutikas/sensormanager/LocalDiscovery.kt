@@ -48,7 +48,7 @@ data class NsdServiceEvent(
 
 @Suppress("ThrowableNotThrown")
 @OptIn(ExperimentalCoroutinesApi::class)
-fun NsdManager.serviceDiscovery(serviceType: String) = channelFlow<NsdServiceEvent> {
+fun NsdManager.serviceDiscovery(serviceType: String) = channelFlow {
     val listener = object : NsdManager.DiscoveryListener {
         override fun onStartDiscoveryFailed(serviceType: String?, errorCode: Int) {
             close(NetworkServiceDiscoveryFailedException(errorCode))
@@ -66,11 +66,11 @@ fun NsdManager.serviceDiscovery(serviceType: String) = channelFlow<NsdServiceEve
         }
 
         override fun onServiceFound(serviceInfo: NsdServiceInfo) {
-            offer(NsdServiceEvent(NsdServiceEvent.Type.Found, serviceInfo))
+            trySend(NsdServiceEvent(NsdServiceEvent.Type.Found, serviceInfo)).isSuccess
         }
 
         override fun onServiceLost(serviceInfo: NsdServiceInfo) {
-            offer(NsdServiceEvent(NsdServiceEvent.Type.Lost, serviceInfo))
+            trySend(NsdServiceEvent(NsdServiceEvent.Type.Lost, serviceInfo)).isSuccess
         }
     }
 
