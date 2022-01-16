@@ -22,6 +22,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.features.json.*
+import io.ktor.client.features.json.serializer.*
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.collect
@@ -31,9 +38,12 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import net.liutikas.sensormanager.NsdServiceEvent
 import net.liutikas.sensormanager.resolveService
 import net.liutikas.sensormanager.serviceDiscovery
+import net.liutikas.sensormanager.ui.LoadedSensorValues
 import net.liutikas.sensormanager.ui.SensorItemEntry
 
 sealed class AppState {
@@ -90,6 +100,13 @@ class ListDevicesAppState : AppState() {
                                     resolved.host?.hostAddress,
                                     false
                                 )
+                                val dataEntries = downloadCurrentData(resolved.host?.hostAddress!!)
+                                _sensorItems[info.serviceName] = SensorItemEntry(
+                                    resolved.serviceName,
+                                    resolved.host?.hostAddress,
+                                    false,
+                                    LoadedSensorValues(dataEntries)
+                                )
                             }
                         }
                     }
@@ -100,6 +117,35 @@ class ListDevicesAppState : AppState() {
                 }
             }
     }
+
+    suspend fun downloadCurrentData(hostAddress: String): List<DataEntry> {
+        val client = HttpClient {
+            install(JsonFeature) {
+                serializer = KotlinxSerializer()
+            }
+        }
+        val response: HttpResponse = client.request("http://$hostAddress/data.json") {
+            method = HttpMethod.Get
+        }
+        val values: DataResponse = response.receive()
+        client.close()
+        return values.sensorDataValues
+    }
+
+    @Serializable
+    data class DataResponse(
+        @SerialName("software_version")
+        val softwareVersion: String,
+        val age: String,
+        @SerialName("sensordatavalues")
+        val sensorDataValues: List<DataEntry>
+    )
+
+    @Serializable
+    data class DataEntry(
+        val value_type: String,
+        val value: String
+    )
 
     override fun tearDown() {
     }

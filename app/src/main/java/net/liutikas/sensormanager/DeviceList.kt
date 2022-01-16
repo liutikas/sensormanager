@@ -20,6 +20,8 @@ import android.content.Context
 import android.net.nsd.NsdManager
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -66,16 +68,18 @@ fun ListDevicesScreen(
             if (appState.sensorItems.isEmpty()) {
                 Text("Searching for devices")
             } else {
-                for ((_, item) in appState.sensorItems) {
-                    SensorItem(
-                        item,
-                        open = {
-                            openService(context,
-                                appState.discoveredServices[item.name] ?: error("Tried to open a sensor URL before IP was resolved")
-                            )
-                        }
-                    )
-                    Divider(color = Color.Transparent, thickness = 16.dp)
+                LazyColumn {
+                    items(appState.sensorItems.values.toList()) { item ->
+                        SensorItem(
+                            item,
+                            open = {
+                                openService(context,
+                                    appState.discoveredServices[item.name] ?: error("Tried to open a sensor URL before IP was resolved")
+                                )
+                            }
+                        )
+                        Divider(color = Color.Transparent, thickness = 16.dp)
+                    }
                 }
             }
         }

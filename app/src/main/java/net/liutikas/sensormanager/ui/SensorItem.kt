@@ -19,6 +19,7 @@ package net.liutikas.sensormanager.ui
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
@@ -27,6 +28,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import net.liutikas.sensormanager.R
+import net.liutikas.sensormanager.state.ListDevicesAppState
 
 @Composable
 fun SensorItem(
@@ -52,6 +54,29 @@ fun SensorItem(
                         style = MaterialTheme.typography.caption
                 )
             }
+            Column() {
+                if (item.values is LoadedSensorValues) {
+                    for (dataEntry in item.values.dataEntries) {
+                        when (dataEntry.value_type) {
+                            "SDS_P1" -> {
+                                Text("PM10: ${dataEntry.value} $particleUnit")
+                            }
+                            "SDS_P2" -> {
+                                Text("PM2.5: ${dataEntry.value} $particleUnit")
+                            }
+                            "BMP280_pressure","BME280_pressure" -> {
+                                Text("${dataEntry.value} hPa")
+                            }
+                            "BMP280_temperature","BME280_temperature","temperature" -> {
+                                Text("${dataEntry.value} $temperatureUnit")
+                            }
+                            "BME280_humidity","humidity" -> {
+                                Text("Humidity ${dataEntry.value}%")
+                            }
+                        }
+                    }
+                }
+            }
         }
         Column {
             if (item.isResolving) {
@@ -65,11 +90,21 @@ fun SensorItem(
     }
 }
 
+const val particleUnit = "µg/m³"
+const val temperatureUnit = "°C"
+
 data class SensorItemEntry(
         val name: String,
         val ipAddress: String? = null,
-        val isResolving: Boolean
+        val isResolving: Boolean,
+        val values: SensorValues = BlankSensorValues
 )
+
+sealed class SensorValues
+object BlankSensorValues: SensorValues()
+data class LoadedSensorValues(
+    val dataEntries: List<ListDevicesAppState.DataEntry>
+): SensorValues()
 
 @Preview
 @Composable
